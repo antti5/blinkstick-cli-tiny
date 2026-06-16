@@ -2,6 +2,15 @@
 
 import BlinkStick from '../lib/BlinkStick.js';
 
+
+/* The lowest non-zero brightness is 5. This is quite dim, and by testing the
+smallest value that actually lights up the LED's on BlinkStick Nano is 3.
+
+Each brightness level is about 1.75x higher than the previous level for visually
+consistent changes in brightness. */
+
+const BRIGHTNESS = [ 0, 5, 9, 15, 27, 47, 83, 145, 255 ];
+
 const COLOR = {
    off:     [0, 0, 0],
    red:     [1, 0, 0],
@@ -13,36 +22,48 @@ const COLOR = {
    white:   [1, 1, 1]
 };
 
-/* The lowest non-zero brightness is 5. This is quite dim, and by testing the
-smallest value that actually lights up the LED's on BlinkStick Nano is 3.
 
-Each brightness level is about 1.75x higher than the previous level for visually
-consistent changes in brightness. */
-
-const BRIGHTNESS = [ 0, 5, 9, 15, 27, 47, 83, 145, 255 ];
+/* Handle command-line arguments */
 
 const args = process.argv.slice(2);
 
 if (args.length < 1) {
-   process.stderr.write(`Usage: blink <color> [brightness 0..${BRIGHTNESS.length - 1}] [index] ["blink"]\n`);
+   process.stderr.write(`Usage: blinkstick [LED index] <Color> ["blink"] [Brightness]\n\n`);
+   process.stderr.write('LED index:  LED index starting from 0, by default use first LED\n');
+   process.stderr.write(`Color:      ${Object.keys(COLOR).join(', ')}\n`);
+   process.stderr.write('Brightness: 0 = off, 8 = full brightness\n');
    process.exit(1);
 }
 
-if (args[0] in COLOR === false) {
-   process.stderr.write('Available colors: ' + Object.keys(COLOR).join(', ') + '\n');
+// Index is optional, read if number
+const index = !isNaN(args[0]) ? args.shift() : 0;
+
+// Color is mandatory
+const color = args.shift();
+if (!COLOR[color]) {
+   process.stderr.write(`Available colors: ${Object.keys(COLOR).join(', ')}\n`);
    process.exit(1);
 }
 
-const color = COLOR[args[0]].map(n => n * BRIGHTNESS[args[1] ?? 4]);
+// Blink is optional
+const blink = args[0] === 'blink';
+if (blink)
+   args.shift();
+
+// Convert color and brightness to RGB values
+const rgb = COLOR[color]?.map(n => n * BRIGHTNESS[args[0] ?? 4]);
+
+
+/* Set LED or start blink. When blinking the process stays alive because of active
+interval in the BlinkStick object. */
 
 try {
-   const bs = new BlinkStick(args[2] ?? 0);
-   if (args[3] === 'blink') {
-      bs.blinkStart(...color);
+   const bs = new BlinkStick(index);
+   if (blink) {
+      bs.blinkStart(...rgb);
    } else {
-      await bs.set(...color);
+      await bs.set(...rgb);
       await bs.close();
-      process.exit(0);
    }
 } catch (error) {
    process.stderr.write(`Error: ${error.message}\n`);
