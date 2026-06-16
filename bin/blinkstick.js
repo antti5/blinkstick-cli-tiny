@@ -51,7 +51,7 @@ if (blink)
    args.shift();
 
 // Convert color and brightness to RGB values
-const rgb = COLOR[color]?.map(n => n * BRIGHTNESS[args[0]] ?? BRIGHTNESS[4]);
+const rgb = COLOR[color].map(n => n * (BRIGHTNESS[args[0]] ?? BRIGHTNESS[4]));
 
 
 /* Set LED or start blink. When blinking the process stays alive because of active
