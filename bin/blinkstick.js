@@ -66,7 +66,7 @@ interval in the BlinkStick object. */
 
 try {
    const bs = new BlinkStick(args.index);
-   if (blink) {
+   if (args.blink) {
       bs.blinkStart(...rgb);
    } else {
       await bs.set(...rgb);
